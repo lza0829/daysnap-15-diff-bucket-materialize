@@ -3,6 +3,7 @@ import uuid
 from typing import Any
 
 from app.db import 连接
+from app.services import 操作闸
 from app.services.时间 import 此刻, 标准化营业日
 
 
@@ -21,6 +22,8 @@ def 日终抽取(营业日: str, 批次编号: str = "") -> dict[str, Any]:
     """按营业日为全部正常账户写周期快照。余额=前日快照(或开户零)+当日流水净额。"""
     日 = 标准化营业日(营业日)
     批 = 批次编号.strip() or f"抽取-{日}-{uuid.uuid4().hex[:8]}"
+    # 与局部重核互斥：该日有局部重核进行中则失败闭，避免盖写交错双写。
+    操作闸.获取全日(日, "日终抽取", 批)
     conn = 连接()
     try:
         参 = _台参(conn)
@@ -111,3 +114,4 @@ def 日终抽取(营业日: str, 批次编号: str = "") -> dict[str, Any]:
         return {"批次编号": 批, **报告}
     finally:
         conn.close()
+        操作闸.释放全日(日, 批)

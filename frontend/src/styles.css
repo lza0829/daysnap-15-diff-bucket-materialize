@@ -154,6 +154,60 @@ th { color: var(--淡); font-weight: 600; background: var(--块深) }
 .徽章.败 { background: var(--败底); color: var(--败) }
 .段 { margin-top: 1.25rem }
 .段题 { font-size: 0.9rem; margin: 0 0 0.55rem; color: var(--水); font-weight: 700 }
+
+/* —— 差额分桶 / 核证 / 局部重核 —— */
+.淡字 { color: var(--淡) }
+.败字 { color: var(--败) }
+.小字 { font-size: 0.76rem }
+.数 { text-align: right; font-variant-numeric: tabular-nums }
+button:disabled { opacity: 0.55; cursor: not-allowed }
+.小钮 { padding: 0.28rem 0.7rem; font-size: 0.8rem }
+
+.链接钮 {
+  display: inline-flex; align-items: center;
+  text-decoration: none; font-weight: 500; font-size: 0.88rem;
+  border: 1px solid var(--线); border-radius: 999px;
+  padding: 0.45rem 0.95rem; color: var(--字); background: transparent;
+}
+a.链接钮:hover { background: rgba(29, 111, 138, 0.08); filter: none }
+
+.chips { display: inline-flex; flex-wrap: wrap; gap: 0.28rem }
+.chip {
+  display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px;
+  background: var(--块深); color: var(--字);
+  font-size: 0.76rem; font-variant-numeric: tabular-nums;
+  border: 1px solid transparent;
+}
+.链接chip { text-decoration: none; cursor: pointer }
+a.链接chip:hover { border-color: var(--水); color: var(--水) }
+
+.徽章 { background: var(--块深); color: var(--淡) }
+.徽章.警 { background: var(--焰弱); color: var(--焰) }
+.徽章.水徽 { background: rgba(29, 111, 138, 0.12); color: var(--水) }
+
+.mini徽章 {
+  display: inline-block; margin-left: 0.35rem;
+  padding: 0.08rem 0.5rem; border-radius: 999px;
+  border: 1px solid var(--线); font-size: 0.74rem; font-weight: 600;
+  background: #fff;
+}
+.mini徽章.败字 { background: var(--败底); border-color: transparent }
+
+.核证头 { display: flex; gap: 0.55rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.65rem }
+.夹具行 { padding: 0.5rem 0.6rem; border: 1px dashed var(--线); border-radius: 10px; background: var(--块) }
+
+.条 {
+  border: 1px solid var(--线); border-radius: 10px;
+  padding: 0.7rem 0.9rem; margin: 0.4rem 0 1rem;
+  font-size: 0.86rem; background: var(--块);
+}
+.条.ok { background: var(--通底); border-color: rgba(47, 125, 87, 0.4) }
+.条.err { background: var(--败底); border-color: rgba(179, 59, 59, 0.4) }
+.条内 { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; margin-top: 0.4rem }
+.条 a { color: var(--水); font-weight: 700 }
+
+.桶表 td, .桶表 th { vertical-align: middle }
+
 @media (max-width: 860px) {
   .壳 { grid-template-columns: 1fr }
   .轨 { position: relative; height: auto }

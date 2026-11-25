@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../api.js";
 
 export default function 周期快照() {
-  const [日, set日] = useState("");
+  const [sp] = useSearchParams();
+  const [日, set日] = useState(sp.get("日") || sp.get("营业日") || "");
   const [行, set行] = useState([]);
   const [讯, set讯] = useState("");
 

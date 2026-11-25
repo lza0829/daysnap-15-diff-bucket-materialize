@@ -89,7 +89,75 @@ CREATE TABLE IF NOT EXISTS 装载批次 (
   时刻 TEXT NOT NULL,
   报告 TEXT NOT NULL DEFAULT '{}'
 );
+-- ===== 差额分桶（方案甲：差额桶表为权威，批号+原因→账户键集合落表）=====
+CREATE TABLE IF NOT EXISTS 差额桶 (
+  桶键 TEXT PRIMARY KEY,
+  回放批次编号 TEXT NOT NULL,
+  营业日 TEXT NOT NULL DEFAULT '',
+  原因 TEXT NOT NULL,
+  账户键集合 TEXT NOT NULL DEFAULT '[]',
+  账户数 INTEGER NOT NULL DEFAULT 0,
+  状态 TEXT NOT NULL DEFAULT '有效',
+  版本 INTEGER NOT NULL DEFAULT 1,
+  时刻 TEXT NOT NULL DEFAULT '',
+  更新时刻 TEXT,
+  UNIQUE(回放批次编号, 原因)
+);
+CREATE TABLE IF NOT EXISTS 差额桶账户 (
+  编号 INTEGER PRIMARY KEY AUTOINCREMENT,
+  桶键 TEXT NOT NULL,
+  回放批次编号 TEXT NOT NULL,
+  原因 TEXT NOT NULL,
+  账户键 TEXT NOT NULL,
+  UNIQUE(回放批次编号, 原因, 账户键)
+);
+CREATE INDEX IF NOT EXISTS idx_桶账户_批 ON 差额桶账户(回放批次编号, 原因);
+CREATE TABLE IF NOT EXISTS 局部重核任务 (
+  任务编号 TEXT PRIMARY KEY,
+  回放批次编号 TEXT NOT NULL,
+  桶键 TEXT NOT NULL DEFAULT '',
+  原因 TEXT NOT NULL DEFAULT '',
+  营业日 TEXT NOT NULL DEFAULT '',
+  状态 TEXT NOT NULL DEFAULT '进行中',
+  局部是否允许 INTEGER NOT NULL DEFAULT 1,
+  原账户键集合 TEXT NOT NULL DEFAULT '[]',
+  受影响键 TEXT NOT NULL DEFAULT '[]',
+  新账户键集合 TEXT NOT NULL DEFAULT '[]',
+  变更键 TEXT NOT NULL DEFAULT '[]',
+  结果 TEXT NOT NULL DEFAULT '{}',
+  错误 TEXT NOT NULL DEFAULT '',
+  时刻 TEXT NOT NULL,
+  完成时刻 TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_重核任务_日状态 ON 局部重核任务(营业日, 状态);
+CREATE TABLE IF NOT EXISTS 操作锁 (
+  锁键 TEXT PRIMARY KEY,
+  操作 TEXT NOT NULL,
+  持有者 TEXT NOT NULL,
+  营业日 TEXT NOT NULL DEFAULT '',
+  时刻 TEXT NOT NULL
+);
+-- 表名别名（只读视图）：兼容以模块名「差额分桶」/英文名直查权威桶集合的用例
+CREATE VIEW IF NOT EXISTS 差额分桶 AS SELECT * FROM 差额桶;
+CREATE VIEW IF NOT EXISTS diff_buckets AS SELECT * FROM 差额桶;
 """
+
+# 旧库增量列（CREATE TABLE IF NOT EXISTS 不会给已存在的差额行补列）
+_增量列 = {
+    "差额行": [
+        ("状态", "TEXT NOT NULL DEFAULT '有效'"),
+        ("重核时刻", "TEXT"),
+        ("重核任务", "TEXT"),
+    ],
+}
+
+
+def _迁移(conn) -> None:
+    for 表, 列们 in _增量列.items():
+        已有 = {r["name"] for r in conn.execute(f"PRAGMA table_info({表})").fetchall()}
+        for 列, 定义 in 列们:
+            if 列 not in 已有:
+                conn.execute(f"ALTER TABLE {表} ADD COLUMN {列} {定义}")
 
 空桩模块 = [
     "开户首日无前日",
@@ -124,6 +192,7 @@ def 此刻() -> str:
 def 初始化库() -> None:
     conn = 连接()
     conn.executescript(建表)
+    _迁移(conn)
     if conn.execute("SELECT COUNT(*) AS c FROM 台参").fetchone()["c"] == 0:
         for k, v in {
             "站名": "日镜账",
